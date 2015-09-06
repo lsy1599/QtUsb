@@ -18,7 +18,7 @@ public:
     libusb_context  *_ctx;
     QStringList listNonRootDevices();
     int writeToDevice(uint i, QString *ohShiet=0);
-    int writeToDevice(QString &productString);
+    QString writeToDevice(QString &productString);
     // TODO
     // Do something to write to exact device...
     // best would be to take String name from device

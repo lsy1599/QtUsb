@@ -1,13 +1,20 @@
 #ifndef USBDEV_H
 #define USBDEV_H
 
-#include "/usr/include/libusb-1.0/libusb.h"
+#include <libusb-1.0/libusb.h>
 #include <QString>
 #include <QStringList>
 #include <QTranslator>
 #include <QTextStream>
 #include <QVector>
 
+
+// TODO when HID class is properly interfaced, than I can check all it properties with
+// Endpoint and then Write & Read from it properly with UsbHidDevice
+
+namespace USBParser{
+    QString parseDeviceClass(int whatIs);
+}
 
 // It was struct - but to avoid warnings considering default 0xFF values which are far off
 // Values which could be gained during usage (f.e. max adress - 127) constructor had to be
@@ -55,7 +62,7 @@ private:
 
     uint8_t _bNumEndpoints;
     AltSetStruct _altSeting;
-    QVector<Endpoint*> _endpoint;
+    QVector<Endpoint> _endpoint;
     int _enumerator;
 
 public:
@@ -79,11 +86,15 @@ public:
 
         for(int i=0;i<_bNumEndpoints;++i){
             Endpoint tmpEndpoint(toGet->endpoint);
-            _endpoint.push_back(&tmpEndpoint);
+            _endpoint.push_back(tmpEndpoint);
         }
     }
 
     ~AlternateSetting(){
+    }
+
+    int interaceClass(){
+        return _altSeting.bInterfaceClass;
     }
 
 //    Endpoint getEndpoint(int nr) const{
@@ -121,12 +132,14 @@ public:
 //    }
 };
 
+// TODO return whole information about all interfaces accessible
+
 class Interface{
 private:
     int _numOfAltInterfaces;
     int _interfaceNr;
     int _enumerator;
-    QVector<AlternateSetting*> _alternateSetting;
+    QVector<AlternateSetting> _alternateSetting;
 
 public:
     Interface() : _numOfAltInterfaces(0), _enumerator(0){
@@ -140,18 +153,17 @@ public:
 
         for(int i=0;i<_numOfAltInterfaces;++i){
             AlternateSetting tmpAlternateSetting(toGet->altsetting);
-            _alternateSetting.push_back(&tmpAlternateSetting);
+            _alternateSetting.push_back(tmpAlternateSetting);
         }
     }
 
-//    AlternateSetting getInterface(int nr) const{
-//        if(!(nr < _numOfAltInterfaces)){
-//            AlternateSetting tmp;
-//            return tmp;
-//        }else{
-//            return _alternateSetting[nr];
-//        }
-//    }
+    QStringList getInterfacesNames(){
+        QStringList tmp;
+        for(int i=0;i<_numOfAltInterfaces;++i){
+            tmp.append("\t->" + USBParser::parseDeviceClass(_alternateSetting[i].interaceClass()));
+        }
+        return tmp;
+    }
 
 //    bool pushInterface(AlternateSetting toPush){
 //        if(_enumerator<_numOfAltInterfaces){
@@ -189,7 +201,7 @@ private:
     libusb_device_descriptor _device_descriptor;    //the device descriptor
     libusb_config_descriptor *_device_config;       //the config descriptor
 
-    QVector<Interface*> _interface;
+    QVector<Interface> _interface;
 //    QVector<const libusb_interface_descriptor*> _interfaceDescriptor;
 //    QVector<const libusb_endpoint_descriptor*> _endpointDescriptor;
 
@@ -202,11 +214,11 @@ private:
     int _numberOfEndpoints;
     QVector<libusb_interface*> _interfaces;
 
-    QString _deviceClass;
+    QStringList _deviceClass;
     QString _manufacturer;                          //for storing manufacturer descriptor
     QString _product;                               //for storing product descriptor
 
-    QString parseDeviceClass();
+    QStringList parseDeviceClass();
 
 public:
     UsbDev();                                       //to create vector in container
@@ -221,7 +233,7 @@ public:
     int deviceClose();
 
     int getNumOfPossibleConfigurations();
-    QString getDeviceClass();
+    QStringList getDeviceClass();
     int getVendorID();
     int getProductID();
     int getConfigDescriptor();

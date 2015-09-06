@@ -60,20 +60,19 @@ void MainWindow::on_pushButton_writeToDev_clicked()
 
 
     QStringList usbLogList;
-    if(_valid_row!=0xFF){
-        QString string;
-        _usbContainer->writeToDevice(_clickedProduct);
+//    if(_valid_row!=0xFF){
+        QString string =_usbContainer->writeToDevice(_clickedProduct);
 //        _usbContainer->writeToDevice(_valid_row,&string);
-        usbLogList.append("Data to be send! \n" + string);
+        usbLogList.append("Info: \n" + string);
         ui->usbListWidget->clear();
         ui->usbListWidget->addItem(usbLogList.at(0));
-        ui->usbListWidget->item(0)->setTextColor(Qt::green);
-    }else{
-        usbLogList.append("Damn failure");
-        ui->usbListWidget->clear();
-        ui->usbListWidget->addItem(usbLogList.at(0));
-        ui->usbListWidget->item(0)->setTextColor(Qt::red);
-    }
+//        ui->usbListWidget->item(0)->setTextColor(Qt::green);
+//    }else{
+//        usbLogList.append("Damn failure");
+//        ui->usbListWidget->clear();
+//        ui->usbListWidget->addItem(usbLogList.at(0));
+//        ui->usbListWidget->item(0)->setTextColor(Qt::red);
+//    }
 }
 
 void MainWindow::on_usbListWidget_clicked(const QModelIndex &index)
