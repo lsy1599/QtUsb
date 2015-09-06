@@ -40,13 +40,15 @@ QStringList UsbContainer::listNonRootDevices(){
 }
 
 int UsbContainer::writeToDevice(uint i,QString *ohShiet){
+    QTextStream(ohShiet) << _usbDevices[i].write();
+
 //    int errorCode = libusb_open(*_device_list, (libusb_device_handle**)&(_usbDevices.at(i)._device_handle));
 //    if(errorCode<0){
 //        QTextStream(ohShiet) << "Connection failure " <<endl;
 //        return errorCode;
 //    }
 
-////    dev.ctrl_transfer(0x40, 0, button.get_active(), 0, 'Hello World!')
+//////    dev.ctrl_transfer(0x40, 0, button.get_active(), 0, 'Hello World!')
 
 //    unsigned char bOut[] = "test";
 //    int result = libusb_control_transfer(
@@ -63,11 +65,11 @@ int UsbContainer::writeToDevice(uint i,QString *ohShiet){
 //    if(ohShiet){
 //        QTextStream(ohShiet) << "przesłano bajtów:" << result << endl;
 //    }else{
-//        //shit happens
+//        QTextStream(ohShiet) << "Nie przesłano bajtów:" << result << endl;
 //    }
-//    // int libusb_claim_interface
-//    //int libusb_release_interface
-//    //void libusb_close
-//    return errorCode;
+////    // int libusb_claim_interface
+////    //int libusb_release_interface
+////    //void libusb_close
+////    return errorCode;
 }
 

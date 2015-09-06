@@ -213,6 +213,10 @@ public:
     UsbDev(libusb_device *device, int devNr, QString *errorLog);
     ~UsbDev();
 
+    virtual QString write(){
+        return QString("Base class - can't write");
+    }
+
     int deviceOpen();
     int deviceClose();
 
@@ -235,6 +239,12 @@ public:
 
     QStringList devInfo();
     QStringList getConfigData();
+};
+
+class UsbHidDev : public UsbDev{
+public:
+   UsbHidDev(const UsbDev &parentUsbDev) : UsbDev(parentUsbDev) {}
+   QString write();
 };
 
 #endif // USBDEV_H

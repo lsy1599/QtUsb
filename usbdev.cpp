@@ -193,3 +193,7 @@ QStringList UsbDev::devInfo(){
 //    }
     return retQStringList;
 }
+
+QString UsbHidDev::write(){
+    return("Not implemented yet");
+}
