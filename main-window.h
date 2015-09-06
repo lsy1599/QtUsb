@@ -30,6 +30,7 @@ private:
     QString _log;
     UsbContainer* _usbContainer;
     int _valid_row;
+    QString _clickedProduct;
 };
 
 #endif // MAINWINDOW_H

@@ -55,10 +55,15 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_pushButton_writeToDev_clicked()
 {
+    // get num from list
+
+
+
     QStringList usbLogList;
     if(_valid_row!=0xFF){
         QString string;
-        _usbContainer->writeToDevice(_valid_row,&string);
+        _usbContainer->writeToDevice(_clickedProduct);
+//        _usbContainer->writeToDevice(_valid_row,&string);
         usbLogList.append("Data to be send! \n" + string);
         ui->usbListWidget->clear();
         ui->usbListWidget->addItem(usbLogList.at(0));
@@ -73,6 +78,9 @@ void MainWindow::on_pushButton_writeToDev_clicked()
 
 void MainWindow::on_usbListWidget_clicked(const QModelIndex &index)
 {
+//    _valid_row(index.row());
+    _clickedProduct = (ui->usbListWidget->item(index.row())->text());
     ui->usbListWidget->clear();
 //    ui->usbListWidget->addItems(_usbContainer->getDeviceInfo(index.row()));
+    ui->usbListWidget->addItems(_usbContainer->getDeviceInfo(_clickedProduct));
 }

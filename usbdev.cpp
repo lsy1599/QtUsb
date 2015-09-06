@@ -38,9 +38,9 @@ UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _nonSUdoDev(
                     _deviceNumber = devNr;
                     _device =device;
                     _nonSUdoDev=true;
-                    _numOfConfigurations = (int) _device_descriptor.bNumConfigurations;
-                    _idVendor = (int)_device_descriptor.idVendor;
-                    _idProduct = (int) _device_descriptor.idProduct;
+                    _numOfConfigurations = _device_descriptor.bNumConfigurations;
+                    _idVendor = _device_descriptor.idVendor;
+                    _idProduct = _device_descriptor.idProduct;
 
 // freshest added part
                     _deviceClass = parseDeviceClass();
@@ -163,34 +163,12 @@ QString UsbDev::getDeviceClass(){
 
 QStringList UsbDev::devInfo(){
     QStringList retQStringList;
-    retQStringList.append("Num of possible configurations: " + getNumOfPossibleConfigurations());
-    retQStringList.append("Device class: " + getDeviceClass());
-    retQStringList.append("Vendor ID: " + getVendorID());
-    retQStringList.append("Produc ID: " + getProductID());
-    retQStringList.append("Num of device interfaces is: " + _numOfInterfaces);
+    retQStringList.append(QString("Num of possible configurations: ") + QString("%1").arg(getNumOfPossibleConfigurations(),0,10));
+    retQStringList.append(QString("Device class: ") + getDeviceClass());
+    retQStringList.append(QString("Vendor ID: ") + QString("0x%1").arg(getVendorID(),4,16));
+    retQStringList.append(QString("Produc ID: ") + QString("0x%1").arg(getProductID(),4,16));
+    retQStringList.append(QString("Num of device interfaces is: ") +QString("%1").arg(_numOfInterfaces,0,10));
 
-//    for(int i=0; i< _numOfInterfaces; i++){
-//        retQStringList.append("Interface nr:" + i);
-//        retQStringList.append("\t\tNumber of alternate interface settings" + ._interfaces.at(i)._numberOfAlternateSettings);
-//        for(int ii=0;ii<numOfAltSettings;++ii){
-//            intdescriptor = &(inter->altsetting[ii]);
-//            retQStringList.append("\t\t\tAlternate interface setting nr: " + (int)intdescriptor->bInterfaceNumber);
-//            int numOfEndpoints = intdescriptor->bNumEndpoints;
-//            retQStringList.append("\t\t\tNum of endpoints: " + numOfEndpoints);
-//            for(int iii=0;iii<numOfEndpoints;++iii){
-//                endpdesc = &intdescriptor->endpoint[iii];
-//                int descriptorType = endpdesc->bDescriptorType;
-//                if(descriptorType == LIBUSB_ENDPOINT_IN){
-//                    retQStringList.append("\t\t\t\tDescriptor type: Input" );
-//                }else if(descriptorType ==  LIBUSB_ENDPOINT_OUT){
-//                    retQStringList.append("\t\t\t\tDescriptor type: Output" );
-//                }else{
-//                    retQStringList.append("\t\t\t\tDescriptor type: ERROR" );
-//                }
-//                retQStringList.append("\t\t\t\tEP Address: " + (int)endpdesc->bEndpointAddress);
-//            }
-//        }
-//    }
     return retQStringList;
 }
 

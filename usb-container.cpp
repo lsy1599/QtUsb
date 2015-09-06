@@ -34,7 +34,8 @@ QStringList UsbContainer::listNonRootDevices(){
     for(int i=0;i<_usbDevices.size();i++)
     {
         if(_usbDevices.at(i).isNonSudoDev()){
-            tmpList.append(_usbDevices.at(i).getProductString() +"\t" +_usbDevices.at(i).getManufacturerString()); }
+            tmpList.append(_usbDevices.at(i).getProductString());// +"\t" +_usbDevices.at(i).getManufacturerString());
+        }
     }
     return tmpList;
 }
@@ -71,5 +72,22 @@ int UsbContainer::writeToDevice(uint i,QString *ohShiet){
 ////    //int libusb_release_interface
 ////    //void libusb_close
 ////    return errorCode;
+}
+
+int UsbContainer::writeToDevice(QString &productString){
+    size_t size = _usbDevices.size() , i;
+    for(i = 0; i<size; ++i){
+        if(_usbDevices[i].getProductString() == productString){
+            break;
+        }
+    }
+    if(i == size){
+        // here shall be some kind of error to be more informative
+        // one shall give string not int, or the best error clas
+        return -1;
+    }else{
+        _usbDevices[i].write();
+        return 1;
+    }
 }
 
