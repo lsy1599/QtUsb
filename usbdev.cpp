@@ -1,7 +1,71 @@
 #include "usbdev.h"
 
-    QString USBParser::parseDeviceClass(int whatIs){
-        switch (whatIs) {
+// Endpoint class begin
+Endpoint::Endpoint(): type(0xFF),adress(0xFF),wMaxPacketSize(0){}
+Endpoint::Endpoint(const libusb_endpoint_descriptor *endpoint){
+    adress = endpoint->bEndpointAddress;
+    type = endpoint->bDescriptorType;
+    interval = endpoint->bInterval;
+    lenght = endpoint->bLength;
+    attributes = endpoint->bmAttributes;
+    refresh = endpoint->bRefresh;
+    synchAddress = endpoint->bSynchAddress;
+    extra = (const char*)endpoint->extra;
+    wMaxPacketSize = endpoint->wMaxPacketSize;
+}
+// Endpoint class end
+// Alternate setting
+AlternateSetting::AlternateSetting(): _bNumEndpoints(0){}
+AlternateSetting::AlternateSetting(int numOfEndpoints, AltSetStruct altSetting)
+                       :_bNumEndpoints(numOfEndpoints),
+                        _altSeting(altSetting)
+{   }
+
+AlternateSetting::AlternateSetting(const libusb_interface_descriptor* toGet){
+    _bNumEndpoints = toGet->bNumEndpoints;
+    _altSeting.bAlternateSetting = toGet->bAlternateSetting;
+    _altSeting.bDescriptorType = toGet->bDescriptorType;
+    _altSeting.bInterfaceClass = toGet->bInterfaceClass;
+    _altSeting.bInterfaceNumber = toGet->bInterfaceNumber;
+    _altSeting.bInterfaceProtocol = toGet->bInterfaceProtocol;
+    _altSeting.bInterfaceSubClass = toGet ->bInterfaceSubClass;
+    _altSeting.bLength = toGet->bLength;
+    _altSeting._extra = (const char*)toGet->extra;
+
+    for(int i=0;i<_bNumEndpoints;++i){
+        Endpoint tmpEndpoint(toGet->endpoint);
+        _endpoint.push_back(tmpEndpoint);
+    }
+}
+
+AlternateSetting::~AlternateSetting()
+{   }
+
+int AlternateSetting::interaceClass(){
+    return _altSeting.bInterfaceClass;
+}
+
+// not checked:
+Endpoint AlternateSetting::getEndpoint(int nr) const{
+    if(!(nr < _bNumEndpoints)){
+        return Endpoint();
+    }else{
+        return _endpoint[nr];
+    }
+}
+
+bool AlternateSetting::setEndpoint(Endpoint toPush){
+    if(_endpoint.size() < _bNumEndpoints){
+        _endpoint += toPush;
+        return true;
+    }else{
+        return false;
+    }
+}
+
+// End of alternate setting
+QString USBParser::parseDeviceClass(int whatIs){
+    switch (whatIs) {
         case LIBUSB_CLASS_PER_INTERFACE:
             return "Interface specyfic";
         case LIBUSB_CLASS_AUDIO:
@@ -56,10 +120,14 @@
             return "Class code not specified";
             break;
         }
-    }
-
-UsbDev::UsbDev() :_isConnected(false),_deviceNumber(OUT_OF_USB_BUS), _nonSUdoDev(0), _device(0), _device_handle(0){
 }
+
+UsbDev::UsbDev() :  _isConnected(false),
+                    _deviceNumber(OUT_OF_USB_BUS),
+                    _nonSUdoDev(0),
+                    _device(0),
+                    _device_handle(0)
+{ }
 
 UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _nonSUdoDev(false)
 {
@@ -100,21 +168,14 @@ UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _nonSUdoDev(
                     _idVendor = _device_descriptor.idVendor;
                     _idProduct = _device_descriptor.idProduct;
 
-// freshest added part
                     libusb_get_config_descriptor(_device, 0, &_device_config);
                     _numOfInterfaces = _device_config->bNumInterfaces;
                     for(int i=0; i< _numOfInterfaces; i++){
-                        //Tu totalna zmiana
                         Interface tmpInterface(_device_config->interface);
                         _interface.push_back(tmpInterface);
-//                        _interface.push_back(&(_device_config->interface[i]));
-//                        _numberOfAlternateSettings = _interfaces->num_altsetting;
-//                        for(int ii=0;ii<_numberOfAlternateSettings;++ii){
-//                        }
                     }
                     _deviceClass = parseDeviceClass();
                     libusb_free_config_descriptor(_device_config);
-// end of freshest part
 
                     if(_isConnected == 1){
                         libusb_close(_device_handle);

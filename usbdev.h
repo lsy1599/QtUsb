@@ -31,19 +31,8 @@ public:
     QString extra;
     uint16_t wMaxPacketSize;
 
-    Endpoint(): type(0xFF),adress(0xFF),wMaxPacketSize(0){
-    }
-    Endpoint(const libusb_endpoint_descriptor *endpoint){
-        adress = endpoint->bEndpointAddress;
-        type = endpoint->bDescriptorType;
-        interval = endpoint->bInterval;
-        lenght = endpoint->bLength;
-        attributes = endpoint->bmAttributes;
-        refresh = endpoint->bRefresh;
-        synchAddress = endpoint->bSynchAddress;
-        extra = (const char*)endpoint->extra;
-        wMaxPacketSize = endpoint->wMaxPacketSize;
-    }
+    Endpoint();
+    Endpoint(const libusb_endpoint_descriptor *endpoint);
 };
 
 struct AltSetStruct{
@@ -63,73 +52,18 @@ private:
     uint8_t _bNumEndpoints;
     AltSetStruct _altSeting;
     QVector<Endpoint> _endpoint;
-    int _enumerator;
 
 public:
 
-    AlternateSetting(): _bNumEndpoints(0){
-    }
-    AlternateSetting(int numOfEndpoints, AltSetStruct altSetting) :_bNumEndpoints(numOfEndpoints), _altSeting(altSetting), _enumerator(0){
-    }
+    AlternateSetting();
+    AlternateSetting(int numOfEndpoints, AltSetStruct altSetting);
+    AlternateSetting(const libusb_interface_descriptor* toGet);
+    ~AlternateSetting();
 
-    AlternateSetting(const libusb_interface_descriptor* toGet) : _enumerator(0){
-        _bNumEndpoints = toGet->bNumEndpoints;
+    int interaceClass();
 
-        _altSeting.bAlternateSetting = toGet->bAlternateSetting;
-        _altSeting.bDescriptorType = toGet->bDescriptorType;
-        _altSeting.bInterfaceClass = toGet->bInterfaceClass;
-        _altSeting.bInterfaceNumber = toGet->bInterfaceNumber;
-        _altSeting.bInterfaceProtocol = toGet->bInterfaceProtocol;
-        _altSeting.bInterfaceSubClass = toGet ->bInterfaceSubClass;
-        _altSeting.bLength = toGet->bLength;
-        _altSeting._extra = (const char*)toGet->extra;
-
-        for(int i=0;i<_bNumEndpoints;++i){
-            Endpoint tmpEndpoint(toGet->endpoint);
-            _endpoint.push_back(tmpEndpoint);
-        }
-    }
-
-    ~AlternateSetting(){
-    }
-
-    int interaceClass(){
-        return _altSeting.bInterfaceClass;
-    }
-
-//    Endpoint getEndpoint(int nr) const{
-//        if(!(nr < _bNumEndpoints)){
-//            Endpoint tmp;
-////            tmp.type = 0xFF;                    // To do: badEndpoint
-////            tmp.adress = 0xFF;                  // To do: badEndpoint
-//            return tmp;
-//        }else{
-//            return _endpoint[nr];
-//        }
-//    }
-
-//    bool pushEndpoint(Endpoint toPush){
-//        if(_enumerator<_bNumEndpoints){
-//            _endpoint[_enumerator]=toPush;
-//            ++_enumerator;
-//            return true;
-//        }else{
-//            return false;
-//        }
-//    }
-
-//    Endpoint popEndpoint(){
-//        if(_enumerator >= 0){
-//            Endpoint tmp = _endpoint[_enumerator];
-//            _enumerator--;
-//            return tmp;
-//        }else{
-//            Endpoint tmp;
-//            tmp.adress =0xFF;
-//            tmp.type =0xFF;
-//            return tmp;
-//        }
-//    }
+    Endpoint getEndpoint(int nr) const;
+    bool setEndpoint(Endpoint toPush);
 };
 
 // TODO return whole information about all interfaces accessible
@@ -142,12 +76,10 @@ private:
     QVector<AlternateSetting> _alternateSetting;
 
 public:
-    Interface() : _numOfAltInterfaces(0), _enumerator(0){
-    }
-
-    Interface(int numOfAltInterfaces) : _numOfAltInterfaces(numOfAltInterfaces), _enumerator(0){
-    }
-
+    Interface() : _numOfAltInterfaces(0), _enumerator(0)
+    {}
+    Interface(int numOfAltInterfaces) : _numOfAltInterfaces(numOfAltInterfaces), _enumerator(0)
+    {}
     Interface(const libusb_interface* toGet) :_enumerator(0) {
         _numOfAltInterfaces = toGet->num_altsetting;
 
@@ -165,7 +97,7 @@ public:
         return tmp;
     }
 
-//    bool pushInterface(AlternateSetting toPush){
+//    bool addInterface(AlternateSetting toPush){
 //        if(_enumerator<_numOfAltInterfaces){
 //            _alternateSetting[_enumerator]=toPush;
 //            ++_enumerator;
@@ -175,7 +107,7 @@ public:
 //        }
 //    }
 
-//    AlternateSetting popInterface(){
+//    AlternateSetting removeInterface(){
 //        if(_enumerator >= 0){
 //            AlternateSetting tmp = _alternateSetting[_enumerator];
 //            _enumerator--;
@@ -202,8 +134,10 @@ private:
     libusb_config_descriptor *_device_config;       //the config descriptor
 
     QVector<Interface> _interface;
-//    QVector<const libusb_interface_descriptor*> _interfaceDescriptor;
-//    QVector<const libusb_endpoint_descriptor*> _endpointDescriptor;
+
+    QStringList _deviceClass;
+    QString _manufacturer;                          //for storing manufacturer descriptor
+    QString _product;                               //for storing product descriptor
 
     int _numOfConfigurations;
     int _idVendor;
@@ -212,11 +146,6 @@ private:
     int _numOfInterfaces;
     int _numberOfAlternateSettings;
     int _numberOfEndpoints;
-    QVector<libusb_interface*> _interfaces;
-
-    QStringList _deviceClass;
-    QString _manufacturer;                          //for storing manufacturer descriptor
-    QString _product;                               //for storing product descriptor
 
     QStringList parseDeviceClass();
 

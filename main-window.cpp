@@ -4,7 +4,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    _valid_row(0xFF)                                        // well .. noone shall have more than 255 devs on his pc...
+    _valid_row(0xFF) // well .. noone shall have more than 255 devs on his pc...
 {
     _usbContainer = new UsbContainer(&_log);
     ui->setupUi(this);
@@ -55,31 +55,16 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_pushButton_writeToDev_clicked()
 {
-    // get num from list
-
-
-
     QStringList usbLogList;
-//    if(_valid_row!=0xFF){
-        QString string =_usbContainer->writeToDevice(_clickedProduct);
-//        _usbContainer->writeToDevice(_valid_row,&string);
-        usbLogList.append("Info: \n" + string);
-        ui->usbListWidget->clear();
-        ui->usbListWidget->addItem(usbLogList.at(0));
-//        ui->usbListWidget->item(0)->setTextColor(Qt::green);
-//    }else{
-//        usbLogList.append("Damn failure");
-//        ui->usbListWidget->clear();
-//        ui->usbListWidget->addItem(usbLogList.at(0));
-//        ui->usbListWidget->item(0)->setTextColor(Qt::red);
-//    }
+    QString string =_usbContainer->writeToDevice(_clickedProduct);
+    usbLogList.append("Info: \n" + string);
+    ui->usbListWidget->clear();
+    ui->usbListWidget->addItem(usbLogList.at(0));
 }
 
 void MainWindow::on_usbListWidget_clicked(const QModelIndex &index)
 {
-//    _valid_row(index.row());
     _clickedProduct = (ui->usbListWidget->item(index.row())->text());
     ui->usbListWidget->clear();
-//    ui->usbListWidget->addItems(_usbContainer->getDeviceInfo(index.row()));
     ui->usbListWidget->addItems(_usbContainer->getDeviceInfo(_clickedProduct));
 }

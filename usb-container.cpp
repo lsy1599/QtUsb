@@ -29,20 +29,18 @@ int UsbContainer::usbLibInit(){
     return error = libusb_init(&_ctx);
 }
 
+
+// Lists all devices which are accesible with no root privileges
 QStringList UsbContainer::listNonRootDevices(){
     QStringList tmpList;
     for(int i=0;i<_usbDevices.size();i++)
     {
         if(_usbDevices.at(i).isNonSudoDev()){
-            tmpList.append(_usbDevices.at(i).getProductString());// +"\t" +_usbDevices.at(i).getManufacturerString());
+            tmpList.append(_usbDevices.at(i).getProductString());
+            // +"\t" +_usbDevices.at(i).getManufacturerString());
         }
     }
     return tmpList;
-}
-
-int UsbContainer::writeToDevice(uint i,QString *ohShiet){
-    QTextStream(ohShiet) << _usbDevices[i].write();
-    return 0;
 }
 
 QString UsbContainer::writeToDevice(QString &productString){
