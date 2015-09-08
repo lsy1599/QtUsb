@@ -21,18 +21,73 @@ namespace USBParser{
 // created
 class Endpoint{
 public:
-    int type;
-    int adress;
-    uint8_t interval;
-    uint8_t lenght;
-    uint8_t attributes;
-    uint8_t refresh;
-    uint8_t synchAddress;
-    QString extra;
+    int bDescriptorType;
+    int bEndpointAddress;
+    uint8_t bLength;
+    uint8_t bRefresh;
+    uint8_t bSynchAddress;
+    uint8_t bmAttributes;
     uint16_t wMaxPacketSize;
+    uint8_t bInterval;
+    QString extra;
 
     Endpoint();
     Endpoint(const libusb_endpoint_descriptor *endpoint);
+    QStringList parse_bmAttributes(){
+        QStringList tmp; QString tmpstr = "Transfer type: ";
+        switch (bmAttributes&0x3) {
+        case 0:
+            tmpStr += "Control";
+            break;
+        case 1:
+            tmpStr+= "Isochronous";
+            break
+        case 2:
+            tmpStr += "Bulk";
+            break;
+        case 3:
+            tmpStr += "Interrupt";
+            break;
+        }
+        tmp.append(tmpstr);
+
+        // if isochronous
+        if(bmAttributes&0x3 == 1){
+            tmpstr = "Sync. type: ";
+            switch(bmAttributes&b110){
+            case 0:
+                tmpStr+= "No Synchonisation";
+                break;
+            case 1:
+                tmpStr+="Asynchronous";
+                break;
+            case 2:
+                tmpStr+= "Adaptive";
+                break;
+            case 3:
+                tmpStr+="Synchronous";
+                break;
+            }
+            tmp.append(tmpstr);
+            tmpStr = "Usage type: ";
+            switch(bmAttributes&b11000){
+            case 0:
+                tmpstr+= "Data Endpoint";
+                break;
+            case 1:
+                tmpstr+= "Feedback Endpoint";
+                break;
+            case 2:
+                tmpstr+="Explicit Feedback Data Endpoint";
+                break;
+            case 3:
+                tmpstr+="Reserved";
+                break;
+            }
+            tmp.append(tmpstr);
+        }
+        return tmp;
+    }
 };
 
 struct AltSetStruct{
@@ -44,6 +99,10 @@ struct AltSetStruct{
     uint8_t bInterfaceSubClass;
     uint8_t bLength;
     QString _extra;
+
+    QString InterfaceProtocol(){
+        return USBParser::parseDeviceClass(bInterfaceClass);
+    }
 };
 
 class AlternateSetting{
@@ -72,15 +131,14 @@ class Interface{
 private:
     int _numOfAltInterfaces;
     int _interfaceNr;
-    int _enumerator;
     QVector<AlternateSetting> _alternateSetting;
 
 public:
-    Interface() : _numOfAltInterfaces(0), _enumerator(0)
+    Interface() : _numOfAltInterfaces(0)
     {}
-    Interface(int numOfAltInterfaces) : _numOfAltInterfaces(numOfAltInterfaces), _enumerator(0)
+    Interface(int numOfAltInterfaces) : _numOfAltInterfaces(numOfAltInterfaces)
     {}
-    Interface(const libusb_interface* toGet) :_enumerator(0) {
+    Interface(const libusb_interface* toGet){
         _numOfAltInterfaces = toGet->num_altsetting;
 
         for(int i=0;i<_numOfAltInterfaces;++i){
@@ -98,9 +156,8 @@ public:
     }
 
 //    bool addInterface(AlternateSetting toPush){
-//        if(_enumerator<_numOfAltInterfaces){
-//            _alternateSetting[_enumerator]=toPush;
-//            ++_enumerator;
+//        if(<_numOfAltInterfaces){
+//            _alternateSetting[]=toPush;
 //            return true;
 //        }else{
 //            return false;
@@ -108,9 +165,8 @@ public:
 //    }
 
 //    AlternateSetting removeInterface(){
-//        if(_enumerator >= 0){
-//            AlternateSetting tmp = _alternateSetting[_enumerator];
-//            _enumerator--;
+//        if( >= 0){
+//            AlternateSetting tmp = _alternateSetting[];
 //            return tmp;
 //        }else{
 //            AlternateSetting tmp;

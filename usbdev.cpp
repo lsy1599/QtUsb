@@ -1,15 +1,15 @@
 #include "usbdev.h"
 
 // Endpoint class begin
-Endpoint::Endpoint(): type(0xFF),adress(0xFF),wMaxPacketSize(0){}
+Endpoint::Endpoint(): bDescriptorType(0xFF),bEndpointAddress(0xFF),wMaxPacketSize(0){}
 Endpoint::Endpoint(const libusb_endpoint_descriptor *endpoint){
-    adress = endpoint->bEndpointAddress;
-    type = endpoint->bDescriptorType;
-    interval = endpoint->bInterval;
-    lenght = endpoint->bLength;
-    attributes = endpoint->bmAttributes;
-    refresh = endpoint->bRefresh;
-    synchAddress = endpoint->bSynchAddress;
+    bEndpointAddress = endpoint->bEndpointAddress;
+    bDescriptorType = endpoint->bDescriptorType;
+    bInterval = endpoint->bInterval;
+    bLength = endpoint->bLength;
+    bmAttributes = endpoint->bmAttributes;
+    bRefresh = endpoint->bRefresh;
+    bSynchAddress = endpoint->bSynchAddress;
     extra = (const char*)endpoint->extra;
     wMaxPacketSize = endpoint->wMaxPacketSize;
 }
