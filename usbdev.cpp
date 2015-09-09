@@ -1,36 +1,23 @@
 #include "usbdev.h"
 
 // Endpoint class begin
-Endpoint::Endpoint(): bDescriptorType(0xFF),bEndpointAddress(0xFF),wMaxPacketSize(0){}
-Endpoint::Endpoint(const libusb_endpoint_descriptor *endpoint){
-    bEndpointAddress = endpoint->bEndpointAddress;
-    bDescriptorType = endpoint->bDescriptorType;
-    bInterval = endpoint->bInterval;
-    bLength = endpoint->bLength;
-    bmAttributes = endpoint->bmAttributes;
-    bRefresh = endpoint->bRefresh;
-    bSynchAddress = endpoint->bSynchAddress;
-    extra = (const char*)endpoint->extra;
-    wMaxPacketSize = endpoint->wMaxPacketSize;
+Endpoint::Endpoint(){
+    _endpoint.bDescriptorType = 0xFF;
+    _endpoint.bEndpointAddress = 0xFF;
+    _endpoint.wMaxPacketSize =(0);
 }
+Endpoint::Endpoint(const libusb_endpoint_descriptor *endpoint) : _endpoint(*endpoint)
+{}
 // Endpoint class end
+
 // Alternate setting
 AlternateSetting::AlternateSetting(): _bNumEndpoints(0){}
-AlternateSetting::AlternateSetting(int numOfEndpoints, AltSetStruct altSetting)
-                       :_bNumEndpoints(numOfEndpoints),
-                        _altSeting(altSetting)
-{   }
+AlternateSetting::AlternateSetting(const libusb_interface_descriptor* toGet) : _libusb_interface_descriptor(*toGet){
 
-AlternateSetting::AlternateSetting(const libusb_interface_descriptor* toGet){
     _bNumEndpoints = toGet->bNumEndpoints;
-    _altSeting.bAlternateSetting = toGet->bAlternateSetting;
-    _altSeting.bDescriptorType = toGet->bDescriptorType;
-    _altSeting.bInterfaceClass = toGet->bInterfaceClass;
-    _altSeting.bInterfaceNumber = toGet->bInterfaceNumber;
-    _altSeting.bInterfaceProtocol = toGet->bInterfaceProtocol;
-    _altSeting.bInterfaceSubClass = toGet ->bInterfaceSubClass;
-    _altSeting.bLength = toGet->bLength;
-    _altSeting._extra = (const char*)toGet->extra;
+    char* tmp = new char[ toGet->extra_length + 1 ];
+    strncpy(tmp,(const char*)(toGet->extra),toGet->extra_length);
+    _extra = tmp;
 
     for(int i=0;i<_bNumEndpoints;++i){
         Endpoint tmpEndpoint(toGet->endpoint);
@@ -42,7 +29,7 @@ AlternateSetting::~AlternateSetting()
 {   }
 
 int AlternateSetting::interaceClass(){
-    return _altSeting.bInterfaceClass;
+    return _libusb_interface_descriptor.bInterfaceClass;
 }
 
 // not checked:
@@ -64,6 +51,7 @@ bool AlternateSetting::setEndpoint(Endpoint toPush){
 }
 
 // End of alternate setting
+
 QString USBParser::parseDeviceClass(int whatIs){
     switch (whatIs) {
         case LIBUSB_CLASS_PER_INTERFACE:
@@ -122,26 +110,30 @@ QString USBParser::parseDeviceClass(int whatIs){
         }
 }
 
-UsbDev::UsbDev() :  _isConnected(false),
+UsbDev::UsbDev() :  _isOpen(false),
                     _deviceNumber(OUT_OF_USB_BUS),
                     _nonSUdoDev(0),
                     _device(0),
                     _device_handle(0)
 { }
 
-UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _nonSUdoDev(false)
+UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _nonSUdoDev(false), _isOpen(false)
 {
     unsigned char string_buffer_manufacturer[4096];     //for storing manufacturer descriptor
     unsigned char string_buffer_product[4096];          //for storing product descriptor
 
     int error=0;
     error = libusb_get_device_descriptor(device, &_device_descriptor);
-    if(error < 0) {QTextStream(errorLog) << "Error: Failed to get descriptor"<< endl;
+    if(error < 0) {
+        QTextStream(errorLog) << "Error: Failed to get descriptor"<< endl;
     }else{
         error= libusb_open(device,&_device_handle);
-        if(error<0){ QTextStream(errorLog) << "Error: Opening USB devicenr: "<< devNr << endl;
+        if(error<0){
+            QTextStream(errorLog) << "Error: Opening USB devicenr: "
+                                  << devNr
+                                  << endl;
         }else{
-            _isConnected = 1;
+            _isOpen = 1;
             error = libusb_get_string_descriptor_ascii(_device_handle,
                                                        _device_descriptor.iManufacturer,
                                                        string_buffer_manufacturer,
@@ -177,32 +169,48 @@ UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _nonSUdoDev(
                     _deviceClass = parseDeviceClass();
                     libusb_free_config_descriptor(_device_config);
 
-                    if(_isConnected == 1){
+                    if(_isOpen == 1){
                         libusb_close(_device_handle);
-                        _isConnected = 0;
+                        _isOpen = 0;
                     }
                 }
             }
         }
-        if (_isConnected == 1){
+        if (_isOpen == 1){
             libusb_close(_device_handle);
-            _isConnected = 0;
+            _isOpen = 0;
         }
     }
 }
 
 UsbDev::~UsbDev(){
-    if(_isConnected){
-        deviceClose();
+    close();
+}
+
+int UsbDev::open(){
+    if(_isOpen){
+        return true;
+    }
+
+    int tmp = libusb_open(_device, &_device_handle);
+
+    if(tmp < 0){
+         _deviceLog << "Error: Opening USB device";
+        if(_isUserConnectable != false) _isUserConnectable = false;
+        return (_isOpen = false);
+    }else{
+        if(!_isUserConnectable) _isUserConnectable = true;
+        return (_isOpen = true);
     }
 }
 
-int UsbDev::deviceOpen(){
-    return false;
-}
-
-int UsbDev::deviceClose(){
-    return false;
+int UsbDev::close(){
+    if(_isOpen){
+        libusb_close(_device_handle);
+        return (_isOpen = false);
+    }else{
+        return (_isOpen = true);
+    }
 }
 
 QStringList UsbDev::parseDeviceClass(){

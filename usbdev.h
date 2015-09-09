@@ -20,28 +20,50 @@ namespace USBParser{
 // Values which could be gained during usage (f.e. max adress - 127) constructor had to be
 // created
 class Endpoint{
+private:
+    libusb_endpoint_descriptor _endpoint;
 public:
-    int bDescriptorType;
-    int bEndpointAddress;
-    uint8_t bLength;
-    uint8_t bRefresh;
-    uint8_t bSynchAddress;
-    uint8_t bmAttributes;
-    uint16_t wMaxPacketSize;
-    uint8_t bInterval;
-    QString extra;
 
     Endpoint();
     Endpoint(const libusb_endpoint_descriptor *endpoint);
+
+    unsigned int decriptorSize(){ return _endpoint.bLength; }
+    // to check what is that in endpoint uint8_t  bDescriptorType;
+    // returns In / Out string
+    QString direction(){
+        switch (_endpoint.bEndpointAddress&0x80) {
+        case LIBUSB_ENDPOINT_IN:
+            return "In";
+            break;
+        default:
+            return "Out";
+            break;
+        }
+    }
+
+    unsigned int endpointNr(){
+        return _endpoint.bEndpointAddress&0x07;
+    }
+
+    unsigned int maxPacketSize(){ return _endpoint.wMaxPacketSize; }
+    unsigned int pollintInterval(){ return _endpoint.bInterval; }
+    unsigned int refreshFeedback(){ return _endpoint.bRefresh; }
+    unsigned int bSynchAddress(){ return _endpoint.bSynchAddress; }
+    QString extra(){
+        char* tmp = new char[ _endpoint.extra_length + 1 ];
+        strncpy(tmp,(const char*)_endpoint.extra,_endpoint.extra_length);
+        return QString(tmp);
+    }  // int extra_length strncpy shal be used better
+
     QStringList parse_bmAttributes(){
-        QStringList tmp; QString tmpstr = "Transfer type: ";
-        switch (bmAttributes&0x3) {
+        QStringList tmp; QString tmpStr = "Transfer type: ";
+        switch (_endpoint.bmAttributes&0x3) {
         case 0:
             tmpStr += "Control";
             break;
         case 1:
             tmpStr+= "Isochronous";
-            break
+            break;
         case 2:
             tmpStr += "Bulk";
             break;
@@ -49,12 +71,12 @@ public:
             tmpStr += "Interrupt";
             break;
         }
-        tmp.append(tmpstr);
+        tmp.append(tmpStr);
 
         // if isochronous
-        if(bmAttributes&0x3 == 1){
-            tmpstr = "Sync. type: ";
-            switch(bmAttributes&b110){
+        if((_endpoint.bmAttributes&0x3) == 1){
+            tmpStr = "Sync. type: ";
+            switch(_endpoint.bmAttributes&(3<<1)){
             case 0:
                 tmpStr+= "No Synchonisation";
                 break;
@@ -68,40 +90,25 @@ public:
                 tmpStr+="Synchronous";
                 break;
             }
-            tmp.append(tmpstr);
+            tmp.append(tmpStr);
             tmpStr = "Usage type: ";
-            switch(bmAttributes&b11000){
+            switch(_endpoint.bmAttributes&(2<<3)){
             case 0:
-                tmpstr+= "Data Endpoint";
+                tmpStr+= "Data Endpoint";
                 break;
             case 1:
-                tmpstr+= "Feedback Endpoint";
+                tmpStr+= "Feedback Endpoint";
                 break;
             case 2:
-                tmpstr+="Explicit Feedback Data Endpoint";
+                tmpStr+="Explicit Feedback Data Endpoint";
                 break;
             case 3:
-                tmpstr+="Reserved";
+                tmpStr+="Reserved";
                 break;
             }
-            tmp.append(tmpstr);
+            tmp.append(tmpStr);
         }
         return tmp;
-    }
-};
-
-struct AltSetStruct{
-    uint8_t bAlternateSetting;
-    uint8_t bDescriptorType;
-    uint8_t bInterfaceClass;
-    uint8_t bInterfaceNumber;
-    uint8_t bInterfaceProtocol;
-    uint8_t bInterfaceSubClass;
-    uint8_t bLength;
-    QString _extra;
-
-    QString InterfaceProtocol(){
-        return USBParser::parseDeviceClass(bInterfaceClass);
     }
 };
 
@@ -109,13 +116,13 @@ class AlternateSetting{
 private:
 
     uint8_t _bNumEndpoints;
-    AltSetStruct _altSeting;
+//    AltSetStruct _altSeting;
     QVector<Endpoint> _endpoint;
-
+    libusb_interface_descriptor _libusb_interface_descriptor;
+    QString _extra;
 public:
 
     AlternateSetting();
-    AlternateSetting(int numOfEndpoints, AltSetStruct altSetting);
     AlternateSetting(const libusb_interface_descriptor* toGet);
     ~AlternateSetting();
 
@@ -123,6 +130,9 @@ public:
 
     Endpoint getEndpoint(int nr) const;
     bool setEndpoint(Endpoint toPush);
+    QString InterfaceProtocol(){
+        return USBParser::parseDeviceClass(_libusb_interface_descriptor.bDescriptorType);
+    }
 };
 
 // TODO return whole information about all interfaces accessible
@@ -180,8 +190,41 @@ class UsbDev
     enum{
         OUT_OF_USB_BUS = 128,
     };
+
+public:
+    UsbDev();                                       //to create vector in container
+    UsbDev(libusb_device *device, int devNr, QString *errorLog);
+    ~UsbDev();
+
+    virtual QString write(){
+        return QString("Base class - can't write");
+    }
+
+    int open();
+    int close();
+
+    int getNumOfPossibleConfigurations();
+    QStringList getDeviceClass();
+    int getVendorID();
+    int getProductID();
+    int getConfigDescriptor();
+
+    bool isNonSudoDev() const{
+        return _nonSUdoDev;
+    }
+
+    QString getProductString() const{
+        return _product;
+    }
+    QString getManufacturerString() const{
+        return _manufacturer;
+    }
+
+    QStringList devInfo();
+    QStringList getConfigData();
+
 private:
-    int _isConnected;                               //is device connected
+    int _isOpen;                                    //is device connected
     int _deviceNumber;                              //device number on USB bus
     bool _nonSUdoDev;                               //device usable without sudo
     libusb_device           *_device;               //libusb device
@@ -203,39 +246,10 @@ private:
     int _numberOfAlternateSettings;
     int _numberOfEndpoints;
 
+    bool _isUserConnectable;
+    QStringList _deviceLog;
+
     QStringList parseDeviceClass();
-
-public:
-    UsbDev();                                       //to create vector in container
-    UsbDev(libusb_device *device, int devNr, QString *errorLog);
-    ~UsbDev();
-
-    virtual QString write(){
-        return QString("Base class - can't write");
-    }
-
-    int deviceOpen();
-    int deviceClose();
-
-    int getNumOfPossibleConfigurations();
-    QStringList getDeviceClass();
-    int getVendorID();
-    int getProductID();
-    int getConfigDescriptor();
-
-    bool isNonSudoDev() const{
-        return _nonSUdoDev;
-    }
-
-    QString getProductString() const{
-        return _product;
-    }
-    QString getManufacturerString() const{
-        return _manufacturer;
-    }
-
-    QStringList devInfo();
-    QStringList getConfigData();
 };
 
 class UsbHidDev : public UsbDev{
