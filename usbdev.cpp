@@ -117,8 +117,18 @@ UsbDev::UsbDev() :  _isOpen(false),
                     _device_handle(0)
 { }
 
-UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _nonSUdoDev(false), _isOpen(false)
+UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _isOpen(false),
+                                                                    _nonSUdoDev(false),
+                                                                    _device(device)
 {
+//    if( getDeviceDescriptor() != true){return;}
+//    if( open() != true ){return;}
+//    if( getManufacturer() != true ){return;}
+//    if( getProduct() != true ){return; }
+//    if( close() != true ){ return; }
+//}
+
+
     unsigned char string_buffer_manufacturer[4096];     //for storing manufacturer descriptor
     unsigned char string_buffer_product[4096];          //for storing product descriptor
 

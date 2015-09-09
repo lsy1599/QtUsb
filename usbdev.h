@@ -196,10 +196,7 @@ public:
     UsbDev(libusb_device *device, int devNr, QString *errorLog);
     ~UsbDev();
 
-    virtual QString write(){
-        return QString("Base class - can't write");
-    }
-
+    virtual QString write(){ return QString("Base class - can't write"); }
     int open();
     int close();
 
@@ -209,17 +206,9 @@ public:
     int getProductID();
     int getConfigDescriptor();
 
-    bool isNonSudoDev() const{
-        return _nonSUdoDev;
-    }
-
-    QString getProductString() const{
-        return _product;
-    }
-    QString getManufacturerString() const{
-        return _manufacturer;
-    }
-
+    bool isNonSudoDev() const{ return _nonSUdoDev; }
+    QString getProductString() const{ return _product; }
+    QString getManufacturerString() const{ return _manufacturer; }
     QStringList devInfo();
     QStringList getConfigData();
 
@@ -230,7 +219,7 @@ private:
     libusb_device           *_device;               //libusb device
     libusb_device_handle    *_device_handle;        //handle to USB device
     libusb_device_descriptor _device_descriptor;    //the device descriptor
-    libusb_config_descriptor *_device_config;       //the config descriptor
+    libusb_config_descriptor *_device_config;        //the config descriptor
 
     QVector<Interface> _interface;
 
