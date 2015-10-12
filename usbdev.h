@@ -27,6 +27,11 @@ public:
     Endpoint();
     Endpoint(const libusb_endpoint_descriptor *endpoint);
 
+    unsigned char getbEndpointAddress()
+    {
+        return _endpoint.bEndpointAddress;
+    }
+
     unsigned int decriptorSize(){ return _endpoint.bLength; }
     // to check what is that in endpoint uint8_t  bDescriptorType;
     // returns In / Out string
@@ -49,6 +54,7 @@ public:
     unsigned int pollintInterval(){ return _endpoint.bInterval; }
     unsigned int refreshFeedback(){ return _endpoint.bRefresh; }
     unsigned int bSynchAddress(){ return _endpoint.bSynchAddress; }
+
     QString extra(){
         char* tmp = new char[ _endpoint.extra_length + 1 ];
         strncpy(tmp,(const char*)_endpoint.extra,_endpoint.extra_length);
@@ -126,6 +132,10 @@ public:
     AlternateSetting(const libusb_interface_descriptor* toGet);
     ~AlternateSetting();
 
+    bool exist(){
+        return _bNumEndpoints?true:false;
+    }
+
     int interaceClass();
 
     Endpoint getEndpoint(int nr) const;
@@ -144,10 +154,8 @@ private:
     QVector<AlternateSetting> _alternateSetting;
 
 public:
-    Interface() : _numOfAltInterfaces(0)
-    {}
-    Interface(int numOfAltInterfaces) : _numOfAltInterfaces(numOfAltInterfaces)
-    {}
+    Interface() : _numOfAltInterfaces(0) {}
+    Interface(int numOfAltInterfaces) : _numOfAltInterfaces(numOfAltInterfaces) {}
     Interface(const libusb_interface* toGet){
         _numOfAltInterfaces = toGet->num_altsetting;
 
@@ -165,24 +173,21 @@ public:
         return tmp;
     }
 
-//    bool addInterface(AlternateSetting toPush){
-//        if(<_numOfAltInterfaces){
-//            _alternateSetting[]=toPush;
-//            return true;
-//        }else{
-//            return false;
-//        }
-//    }
+    AlternateSetting fetchInterface(QString name){
+        auto iter = _alternateSetting.begin();
+        for( int i = 0, max=_alternateSetting.size();
+             i < max;
+             ++i
+             )
+        {
+            if ( name == USBParser::parseDeviceClass(iter[i].interaceClass()) )
+            {
+                return iter[i];
+            }
+        }
+        return AlternateSetting();
+    }
 
-//    AlternateSetting removeInterface(){
-//        if( >= 0){
-//            AlternateSetting tmp = _alternateSetting[];
-//            return tmp;
-//        }else{
-//            AlternateSetting tmp;
-//            return tmp;
-//        }
-//    }
 };
 
 class UsbDev
@@ -205,6 +210,23 @@ public:
     int getVendorID();
     int getProductID();
     int getConfigDescriptor();
+
+    libusb_device_handle *getHandle(){ return _device_handle; }
+    // returns first endpoint of that type
+    unsigned char getEndpoint(QString endpointType, QString &result){
+        for( auto i: _interface )
+        {
+            AlternateSetting tmp = i.fetchInterface(endpointType);
+            if( tmp.exist() )
+            {
+                result = "success";
+                return tmp.getEndpoint(0).getbEndpointAddress();
+            }
+        }
+        result == "fail";
+        unsigned char a='\0';
+        return a;
+    }
 
     bool isNonSudoDev() const{ return _nonSUdoDev; }
     QString getProductString() const{ return _product; }

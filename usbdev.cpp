@@ -263,5 +263,20 @@ QStringList UsbDev::devInfo(){
 }
 
 QString UsbHidDev::write(){
-    return("Not implemented yet");
+    unsigned char buffer[64];
+    unsigned int timeout = 5000;
+    int nBytes, act_len;
+    QString result;
+    unsigned char endpoint = this->getEndpoint("HID",result);
+    if(result == "success")
+    {
+        nBytes = libusb_interrupt_transfer( this->getHandle(),
+                                                endpoint,
+                                                buffer,
+                                                sizeof(buffer),
+                                                &act_len,
+                                                timeout
+                                              );
+    }
+    return(QString("Not tested yet %1").arg(nBytes,0,10));
 }
