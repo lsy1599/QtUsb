@@ -9,12 +9,11 @@
 #include <QVector>
 
 
-// TODO when HID class is properly interfaced, than I can check all it properties with
-// Endpoint and then Write & Read from it properly with UsbHidDevice
+// TODO change libusb struct
 
 namespace USBParser{
-    QString parseDeviceClass(int whatIs);
-    QString parseUsbError(int whatIs);
+    QString parseDeviceClass(int code);
+    QString parseUsbError(int error);
 }
 
 // It was struct - but to avoid warnings considering default 0xFF values which are far off
@@ -45,20 +44,26 @@ public:
 class AlternateSetting {
 private:
 
-    uint8_t _bNumEndpoints;
+    libusb_interface_descriptor interface_descriptor;
     QVector<Endpoint> _endpoint;
     libusb_interface_descriptor _libusb_interface_descriptor;
     QString _extra;
 public:
-
+    enum Direction {
+        In  = 0,
+        Out = 1,
+    };
     AlternateSetting();
     AlternateSetting(const libusb_interface_descriptor* toGet);
     ~AlternateSetting();
     bool exist();
     int interaceClass();
     Endpoint getEndpoint(int nr) const;
+    Endpoint getEndpoint(Direction IO);
     bool setEndpoint(Endpoint toPush);
     QString InterfaceProtocol();
+    int getInterfaceNr();
+//    size_t getEndpointNum();
 };
 
 // TODO return whole information about all interfaces accessible
@@ -66,7 +71,6 @@ public:
 class Interface{
 private:
     int _numOfAltInterfaces;
-    int _interfaceNr;
     QVector<AlternateSetting> _alternateSetting;
 
 public:
