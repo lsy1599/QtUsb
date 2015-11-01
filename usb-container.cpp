@@ -59,3 +59,29 @@ QString UsbContainer::writeToDevice(QString &productString){
     }
 }
 
+QStringList UsbContainer::getDeviceInfo(int i){
+    QString tmp;
+    QTextStream(&tmp) << _usbDevices.size();
+    QStringList tmpList;
+    tmpList.append(tmp);
+    QTextStream(&tmp) << i;
+    tmpList.append(tmp);
+    return tmpList;
+}
+
+QStringList UsbContainer::getDeviceInfo(QString &stringi){
+    QStringList tmp;
+    size_t size = _usbDevices.size(), i;
+    for(i=0; i<size ; ++i){
+        if(_usbDevices[i].getProductString() == stringi ){
+            break;
+        }
+    }
+    if(i == size){
+        tmp.append("Shit no such device");
+    }else{
+        tmp = _usbDevices[i].devInfo();
+    }
+    return tmp;
+}
+
