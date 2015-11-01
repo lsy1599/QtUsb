@@ -19,12 +19,14 @@ namespace USBParser{
 // It was struct - but to avoid warnings considering default 0xFF values which are far off
 // Values which could be gained during usage (f.e. max adress - 127) constructor had to be
 // created
-class Endpoint{
+class Endpoint : public libusb_endpoint_descriptor {
 private:
-    libusb_endpoint_descriptor _endpoint;
     QString extra_;
 public:
-
+    enum Direction {
+        In  = 0,
+        Out = 1,
+    };
     Endpoint();
     Endpoint(const libusb_endpoint_descriptor *endpoint);
     unsigned char getbEndpointAddress();
@@ -34,32 +36,24 @@ public:
     unsigned int maxPacketSize();
     unsigned int pollintInterval();
     unsigned int refreshFeedback();
-    unsigned int bSynchAddress();
-    QString extra();
+    unsigned int synchAddress();
     QStringList parse_bmAttributes();
-
     bool exist() const;
 };
 
 class AlternateSetting {
 private:
-
     libusb_interface_descriptor interface_descriptor;
     QVector<Endpoint> _endpoint;
-    libusb_interface_descriptor _libusb_interface_descriptor;
     QString _extra;
 public:
-    enum Direction {
-        In  = 0,
-        Out = 1,
-    };
     AlternateSetting();
     AlternateSetting(const libusb_interface_descriptor* toGet);
     ~AlternateSetting();
     bool exist();
     int interaceClass();
     Endpoint getEndpoint(int nr) const;
-    Endpoint getEndpoint(Direction IO);
+    Endpoint getEndpoint(Endpoint::Direction IO);
     bool setEndpoint(Endpoint toPush);
     QString InterfaceProtocol();
     int getInterfaceNr();
