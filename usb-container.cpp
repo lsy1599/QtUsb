@@ -55,7 +55,7 @@ QString UsbContainer::writeToDevice(QString &productString){
         // one shall give string not int, or the best error clas
         return "One shall not pass";
     }else{
-        return _usbDevices[i].write();
+        return _usbDevices[i].interrupt_transfer(Endpoint::Direction::Out);
     }
 }
 

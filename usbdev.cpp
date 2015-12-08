@@ -128,9 +128,9 @@ Endpoint AlternateSetting::getEndpoint(Endpoint::Direction IO)
     return Endpoint();
 }
 
-Endpoint AlternateSetting::getEndpoint(int nr) const{
+Endpoint AlternateSetting::getEndpoint(int nr) throw(Error) {
     if(!(nr < interface_descriptor.bNumEndpoints)){
-        return Endpoint();
+        throw Error("Endpoint does not exist");
     }else{
         return _endpoint[nr];
     }
@@ -318,28 +318,19 @@ UsbDev::~UsbDev(){
     close();
 }
 
-int UsbDev::open(){
+int UsbDev::open() throw(Error) {
     if(_isOpen){
         return true;
     }
-
     int tmp = libusb_open(_device, &_device_handle);
-
     if(tmp < 0){
          _deviceLog << "Error: Opening USB device";
         if(_isUserConnectable != false) _isUserConnectable = false;
-        return (_isOpen = false);
+        _isOpen = false;
+        throw Error("Can't open USB device");
     }else{
+        st.push(State::ST::Opened);
         if(!_isUserConnectable) _isUserConnectable = true;
-        return (_isOpen = true);
-    }
-}
-
-int UsbDev::close(){
-    if(_isOpen){
-        libusb_close(_device_handle);
-        return (_isOpen = false);
-    }else{
         return (_isOpen = true);
     }
 }
@@ -359,21 +350,31 @@ QStringList UsbDev::getDeviceClass(){
     return _deviceClass;
 }
 
-libusb_device_handle* UsbDev::getHandle()
+libusb_device_handle* UsbDev::getHandle() throw(Error)
 {
-    return _device_handle;
+    if ( _device_handle ) {
+        return _device_handle;
+    } else {
+        Error b("No handle available");
+        throw b;
+    }
 }
 
-AlternateSetting UsbDev::getInterface(QString endpointType)
+AlternateSetting UsbDev::getInterface(QString endpointType) throw(Error)
 {
-    for( auto i: _interface )
+    auto iter = _interface.begin();
+    for( int i=0; i< _interface.size(); ++i )
     {
-        AlternateSetting tmp = i.fetchInterface(endpointType);
+        AlternateSetting tmp = iter[i].fetchInterface(endpointType);
         if( tmp.exist() )
         {
             return tmp;
         }
     }
+    if ( iter == _interface.end() ) {
+        throw Error("No such interface");
+    }
+    // this should never get here
     return AlternateSetting();
 }
 
@@ -421,90 +422,118 @@ QStringList UsbDev::devInfo(){
     return retQStringList;
 }
 
-QString UsbDev::write(){
+// TODO add throw here and end interrupt_transfer (...)
+int raw_interrupt_transfer( libusb_device_handle *handle,
+                            Endpoint::Direction IO,
+                            unsigned char *buf,
+                            size_t buf_len,
+                            int &act_len,
+                            unsigned int timeout
+                          ) throw(Error) {
+   int nBytes = libusb_interrupt_transfer(  handle,
+                                            0x01,               // agr change this to Direction::Out, in depending what we want to do
+                                            buf,
+                                            buf_len,
+                                            &act_len,
+                                            timeout
+                                          );
+   if ( nBytes < 0 ) {
+       throw Error(USBParser::parseUsbError(nBytes));
+   } else {
+       return nBytes;
+   }
+}
+
+void raw_release_interface( libusb_device_handle *handle, uint8_t epNr ) throw(Error) {
+    int ret = libusb_release_interface( handle,epNr);
+    if ( ret < 0 ) {
+        throw Error(USBParser::parseUsbError(ret));
+    }
+}
+
+void raw_close(libusb_device_handle *handle) {
+    libusb_close(handle);
+}
+
+// TODO change IN/OUT problem
+// TODO add data to interrutp_transfer
+QString UsbDev::interrupt_transfer( Endpoint::Direction IO ){
+    static bool set_me_ablaze = true;
     unsigned char buffer[2] = { 0xff,0xff };
+    buffer[1] = set_me_ablaze;
     unsigned int timeout = 5000;
     int nBytes, act_len;
     QString returnable("In tests : ");
 
-    if( !this->open() ) {
-        return _deviceLog.join("\n");
+    try {
+        this->open();
+        AlternateSetting tmpInt = this->getInterface("HID");
+        qDebug() << "Why interface nr is wrong?: " << tmpInt.getInterfaceNr();
+        this->checkAndDetachKernelDriver(this->getHandle(),0);
+        this->claim_interface( this->getHandle(), 0 );
+        // WHY bInterface nr is badly passed in getEndpoint??
+        this->checkBuffor( sizeof(buffer),tmpInt.getEndpoint(Endpoint::Direction::In).maxPacketSize(), Endpoint::Direction::In );
+        // TODO : sth fucked up In is Out, and Out is 0 instead of 1
+        qDebug() << tmpInt.getEndpoint(Endpoint::Direction::Out).getbEndpointAddress()  // is it finding clear Endpoint(), check in debugger
+                 << ":#:"
+                 << tmpInt.getEndpoint(Endpoint::Direction::In).getbEndpointAddress()
+                 << " : " << 0x01;
+        nBytes = raw_interrupt_transfer(this->getHandle(),Endpoint::Direction::Out, buffer, sizeof(buffer), act_len, timeout );
+        set_me_ablaze ^= set_me_ablaze;
+//        instead free two times - lets freeAllStates :)
+//        raw_release_interface(this->getHandle(),0); //, tmpInt.getEndpoint(AlternateSetting::Direction::In).endpointNr() );
+//        this->close();
+        freeStates();
+        qDebug() << "Sent: " << nBytes;
+    } catch (Error &err) {
+        // Add:
+        // actionOnError(err);
+        // this will be acion when error occures and fe one have to cancel usb connection or release interface.
+        freeStates();
+        return err.get();
     }
-
-    AlternateSetting tmpInt = this->getInterface("HID");
-    if( tmpInt.exist() )
-    {
-        qDebug() << "WHY?: " << tmpInt.getInterfaceNr();
-        if ( libusb_kernel_driver_active(this->getHandle(), 0 ) == true ) //tmpInt.getInterfaceNr()
-        {
-            QTextStream(&returnable)  << "Kernel Driver Active";
-            if ( libusb_detach_kernel_driver(this->getHandle(), 0 ) == false ) //tmpInt.getInterfaceNr()
-            {
-                QTextStream(&returnable) << "Kernel Driver Detached!" << "\n";
-            }
-        }
-        else
-        {
-            QTextStream(&returnable)  << "Kernel Driver not Active on: " << tmpInt.getInterfaceNr() << "\n";
-        }
-
-        if(this->open() && tmpInt.getEndpoint(Endpoint::Direction::In).exist() )
-        {
-            // WHY bInterface nr is badly passed in getEndpoint??
-            nBytes = libusb_claim_interface(this->getHandle(),0);//tmpInt.getEndpoint(AlternateSetting::Direction::In).endpointNr());
-            if( nBytes >= 0 )
-            {
-                if ( sizeof(buffer) <= tmpInt.getEndpoint(Endpoint::Direction::In).maxPacketSize()  )
-                {
-                    // TODO : sth fucked up In is Out, and Out is 0 instead of 1
-                    qDebug() << tmpInt.getEndpoint(Endpoint::Direction::Out).getbEndpointAddress()  // is it finding clear Endpoint(), check in debugger
-                             << ":#:"
-                             << tmpInt.getEndpoint(Endpoint::Direction::In).getbEndpointAddress()
-                             << " : " << 0x01;
-
-                    nBytes = libusb_interrupt_transfer( this->getHandle(),
-                                                        0x01,               // agr change this to Direction::Out
-                                                        buffer,
-                                                        sizeof(buffer),
-                                                        &act_len,
-                                                        timeout
-                                                       );
-                }
-                else
-                {
-                    this->close();
-                    QTextStream(&returnable) << "Too big buffor: "
-                                             << sizeof(buffer)
-                                             << QString(" Against: ")
-                                             << tmpInt.getEndpoint(Endpoint::Direction::In).maxPacketSize();
-                }
-                /* retval = */libusb_release_interface(this->getHandle(),0);//, tmpInt.getEndpoint(AlternateSetting::Direction::In).endpointNr() );
-            }
-            else
-            {
-                QTextStream(&returnable)  << "Cannot claim device on endpoint nr: "
-                                          << tmpInt.getEndpoint(Endpoint::Direction::In).endpointNr()
-                                          << "\n";
-            }
-        }
-        else
-        {
-            QTextStream(&returnable)  << "Device open: ("
-                                      << _isOpen
-                                      << ") is closed, or endpoint doesn't exist"
-                                      << "\n";
-        }
-    }
-    this->close();
-    if(nBytes <0 )
-    {
-        QTextStream(&returnable) << "Error: " << USBParser::parseUsbError(nBytes);
-    }
-    else
-    {
-        QTextStream(&returnable) << "No error!";
-    }
+    // transfered nBytes
     return returnable;
+}
+
+int UsbDev::close() {
+    if(_isOpen){
+        raw_close(this->getHandle());
+        return (_isOpen = false);
+    }else{
+        return (_isOpen = true);
+    }
+}
+
+void UsbDev::deClaim() throw(Error)
+{
+    raw_release_interface(this->getHandle(), st.popInNr() );
+}
+bool UsbDev::freeStates() {
+    try {
+        State::ST tmp = st.pop();
+        for (; tmp != State::ST::None; tmp = st.pop() ) {
+            switch ( tmp ) {
+            case State::ST::None:
+                break;
+            case State::ST::Opened:
+                close();
+                break;
+            case State::ST::Claimed:
+                deClaim();
+                break;
+            default:
+                qDebug() << "Success!";
+                break;
+            }
+        }
+    } catch ( Error & err ) {
+        qDebug() << "What do do now?";
+        qDebug() << "Add to state what caused state and ... revind again";
+        qDebug() << err.get();
+        return false;
+    }
+    return true;
 }
 
 // USB dev - private
@@ -521,23 +550,33 @@ QStringList UsbDev::parseDeviceClass(){
     return tmp;
 }
 
-// UsbHid - to delete.
-
-QString UsbHidDev::write(){
-    unsigned char buffer[64];
-    unsigned int timeout = 5000;
-    int nBytes, act_len;
-    QString result;
-    unsigned char endpoint = this->getEndpoint("HID",result);
-    if(result == "success")
-    {
-        nBytes = libusb_interrupt_transfer(     this->getHandle(),
-                                                endpoint,
-                                                buffer,
-                                                sizeof(buffer),
-                                                &act_len,
-                                                timeout
-                                              );
+void UsbDev::checkAndDetachKernelDriver(libusb_device_handle* handle, uint8_t interfaceNr ) {
+    if ( libusb_kernel_driver_active(handle, 0 ) == true ) {  //tmpInt.getInterfaceNr()
+        qDebug()  << "Kernel Driver Active";
+        if ( libusb_detach_kernel_driver(handle, 0 ) == false ) { //tmpInt.getInterfaceNr()
+            qDebug() << "Kernel Driver Detached!" << "\n";
+        }
+    } else {
+        qDebug()  << "Kernel Driver not Active on: " << interfaceNr << "\n";
     }
-    return(QString("Not tested yet %1").arg(nBytes,0,10));
+}
+
+/// TODO:
+/// Change so that IO in both ways will be ok -
+/// so that: when send size < buffSize (and pass send size )
+/// can be checked with ?strlen? no if we want to send zeroes
+void UsbDev::checkBuffor( size_t buffSize, size_t eBuffSize, Endpoint::Direction IO ) throw(Error) {
+    if ( buffSize > eBuffSize && IO == Endpoint::Direction::In ) {
+        throw Error("Buffor too big for transfer");
+    } else if (buffSize < eBuffSize && IO == Endpoint::Direction::Out ) {
+        throw Error("Buffor too small for transfer");
+    }
+}
+
+void UsbDev::claim_interface(libusb_device_handle* handle, unsigned int epNr ) throw(Error) {
+    if ( libusb_claim_interface(handle,epNr)  < 0 ) { //tmpInt.getEndpoint(AlternateSetting::Direction::In).endpointNr());
+        throw Error("Can not claim interface");
+    } else {
+        st.push(epNr);
+    }
 }

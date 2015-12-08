@@ -15,11 +15,13 @@ CONFIG += c++11
 SOURCES += main.cpp\
         main-window.cpp \
     usbdev.cpp \
-    usb-container.cpp
+    usb-container.cpp \
+    baseinfo.cpp
 
 HEADERS  += main-window.h \
     usbdev.h \
-    usb-container.h
+    usb-container.h \
+    baseinfo.h
 
 FORMS    += mainwindow.ui
 

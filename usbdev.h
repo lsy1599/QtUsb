@@ -7,11 +7,14 @@
 #include <QTranslator>
 #include <QTextStream>
 #include <QVector>
+#include <QList>
+#include <baseinfo.h>
+#include <QDebug>
 
 
 // TODO change libusb struct
 
-namespace USBParser{
+namespace USBParser {
     QString parseDeviceClass(int code);
     QString parseUsbError(int error);
 }
@@ -52,7 +55,7 @@ public:
     ~AlternateSetting();
     bool exist();
     int interaceClass();
-    Endpoint getEndpoint(int nr) const;
+    Endpoint getEndpoint(int nr) throw(Error);
     Endpoint getEndpoint(Endpoint::Direction IO);
     bool setEndpoint(Endpoint toPush);
     QString InterfaceProtocol();
@@ -75,6 +78,10 @@ public:
     AlternateSetting fetchInterface(QString name);
 };
 
+// AND add while (pop != nop ) -> corr action ( in catch )
+// fun cleanState
+// AND add state to dev.
+// ADD new state use to get all devices and so one
 class UsbDev
 {
     enum{
@@ -86,28 +93,73 @@ public:
     UsbDev(libusb_device *device, int devNr, QString *errorLog);
     ~UsbDev();
 
-    int open();
+    class State {
+    private:
+        QVector<char> interfacesNrClaimed;
+    public:
+        enum ST {
+            None = 0,
+            Opened,
+            Claimed,
+        };
+        ST pop() {
+            if ( state.isEmpty() ) {
+                return None;
+            } else {
+                ST tmp = state.front();
+                state.pop_front();
+                return tmp;
+            }
+        }
+        void push(State::ST st) {
+            state.push_back(st);
+        }
+
+        void push(char interfaceNr) {
+            state.push_back(State::ST::Claimed);
+            interfacesNrClaimed.push_back(interfaceNr);
+        }
+
+        char popInNr() {
+            char tmp = interfacesNrClaimed.back();
+            interfacesNrClaimed.pop_back();
+            return tmp;
+        }
+
+        State() { }
+    private:
+        QList<ST> state;
+    };
+
+    State st;
+    int open() throw(Error);
     int close();
+    // Usb configs
     int getNumOfPossibleConfigurations();
     int getVendorID();
     int getProductID();
     QStringList getDeviceClass();
     int getConfigDescriptor();
-
-    libusb_device_handle *getHandle();
-    // return Interface of that type
-    AlternateSetting getInterface(QString endpointType);
-    // returns first endpoint address of that type
-    unsigned char getEndpoint(QString endpointType, QString &result);
+    // Usb connection elements
+    libusb_device_handle *getHandle() throw(Error);
+    AlternateSetting getInterface(QString endpointType) throw(Error);                  // return Interface of that type
+    unsigned char getEndpoint(QString endpointType, QString &result);     // returns first endpoint address of that type
     bool isNonSudoDev() const;
+    // Usb configs cd
     QString getProductString() const;
     QString getManufacturerString() const;
     QStringList devInfo();
     QStringList getConfigData();
-    QString write();
+    QString interrupt_transfer(Endpoint::Direction IO);
+//    QString pollRead();
+    void deClaim() throw(Error);
+    bool freeStates();
 
 private:
     QStringList parseDeviceClass();
+    void checkAndDetachKernelDriver(libusb_device_handle* handle, uint8_t interfaceNr );
+    void checkBuffor( size_t buffSize, size_t eBuffSize, Endpoint::Direction IO ) throw(Error);
+    void claim_interface(libusb_device_handle* handle, unsigned int epNr ) throw(Error);
 
     int _isOpen;                                    //is device connected
     int _deviceNumber;                              //device number on USB bus
@@ -115,7 +167,7 @@ private:
     libusb_device           *_device;               //libusb device
     libusb_device_handle    *_device_handle;        //handle to USB device
     libusb_device_descriptor _device_descriptor;    //the device descriptor
-    libusb_config_descriptor *_device_config;        //the config descriptor
+    libusb_config_descriptor *_device_config;       //the config descriptor
     QVector<Interface> _interface;
     QStringList _deviceClass;
     QString _manufacturer;                          //for storing manufacturer descriptor
@@ -132,10 +184,4 @@ private:
 
 };
 
-class UsbHidDev : public UsbDev{
-public:
-   UsbHidDev(const UsbDev &parentUsbDev) : UsbDev(parentUsbDev) {}
-   QString write();
-};
-
-#endif // USBDEV_H
+#endif
