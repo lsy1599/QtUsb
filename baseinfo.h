@@ -9,7 +9,9 @@ class BaseInfo
 private:
     QString ss;
 public:
-    BaseInfo( QString text = "" );
+    BaseInfo( QString text = "" ) {
+        ss = text;
+    }
     template<typename T>
     BaseInfo& operator<<(T &el) {
         QTextStream(ss) << el;

@@ -106,8 +106,8 @@ public:
             if ( state.isEmpty() ) {
                 return None;
             } else {
-                ST tmp = state.front();
-                state.pop_front();
+                ST tmp = state.back();
+                state.pop_back();
                 return tmp;
             }
         }
