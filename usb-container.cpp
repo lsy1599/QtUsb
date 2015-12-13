@@ -6,14 +6,13 @@ UsbContainer::UsbContainer(QString *errorLog) : _error(0), _numOfDev(0), _errorL
 {
     _error = usbLibInit();
     if(_error < 0) QTextStream(_errorLog) << "Error: Initializing libusb" << endl;
-    else{
+    else {
         _numOfDev = libusb_get_device_list(_ctx, &_device_list);
-        if(_numOfDev < 1) {
+        if (_numOfDev < 1) {
             QTextStream(_errorLog) << "Error: No dev found" << endl;
             return;
         }else{
-            for(uint i=0;i<_numOfDev; i++)
-            {
+            for (uint i=0;i<_numOfDev; i++) {
                 _usbDevices.push_back(UsbDev(_device_list[i],i,errorLog));
             }
         }
@@ -55,7 +54,7 @@ QString UsbContainer::writeToDevice(QString &productString){
         // one shall give string not int, or the best error clas
         return "One shall not pass";
     }else{
-        return _usbDevices[i].write();
+        return _usbDevices[i].interrupt_transfer(Endpoint::Direction::Out);
     }
 }
 
