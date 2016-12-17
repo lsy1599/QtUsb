@@ -151,6 +151,7 @@ public:
     QStringList devInfo();
     QStringList getConfigData();
     QString interrupt_transfer(Endpoint::Direction IO);
+    QString controll_transfer(Endpoint::Direction IO);
 //    QString pollRead();
     void deClaim() throw(Error);
     bool freeStates();

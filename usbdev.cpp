@@ -454,11 +454,11 @@ void raw_close(libusb_device_handle *handle) {
 }
 
 // TODO add data to interrutp_transfer and remove tmp set_me_ablaze
-QString UsbDev::interrupt_transfer( Endpoint::Direction IO ){
+// this was for tests purposes for led blinking :)
+QString UsbDev::interrupt_transfer( Endpoint::Direction IO, const unsigned int timeout=5000 ){
     static bool set_me_ablaze = true;
     unsigned char buffer[2] = { 0xff,0xff };
     buffer[1] = set_me_ablaze;
-    unsigned int timeout = 5000;
     int act_len;
 
     try {
@@ -479,6 +479,20 @@ QString UsbDev::interrupt_transfer( Endpoint::Direction IO ){
         return err.get();
     }
     return "";
+}
+
+// TODO: change 0,0, to some named values, check 2nd value in controll transfer, check if IO is actually ok
+QString UsbDeb::controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout=5000) {
+    libusb_control_transfer(
+            this->getHandle(), 
+            LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT, 
+            IO, 
+            0, 
+            0, 
+            bufer, 
+            buf_size, 
+            timeout
+            );
 }
 
 int UsbDev::close() {

@@ -1,7 +1,5 @@
 #include "usb-container.h"
 
-#define SHITHAPPENS 0 // get from project this shit
-
 UsbContainer::UsbContainer(QString *errorLog) : _error(0), _numOfDev(0), _errorLog(errorLog)
 {
     _error = usbLibInit();
@@ -36,7 +34,6 @@ QStringList UsbContainer::listNonRootDevices(){
     {
         if(_usbDevices.at(i).isNonSudoDev()){
             tmpList.append(_usbDevices.at(i).getProductString());
-            // +"\t" +_usbDevices.at(i).getManufacturerString());
         }
     }
     return tmpList;
@@ -77,7 +74,7 @@ QStringList UsbContainer::getDeviceInfo(QString &stringi){
         }
     }
     if(i == size){
-        tmp.append("Shit no such device");
+        tmp.append("No such device");
     }else{
         tmp = _usbDevices[i].devInfo();
     }

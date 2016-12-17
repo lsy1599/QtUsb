@@ -4,7 +4,6 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    _valid_row(0xFF) // well .. noone shall have more than 255 devs on his pc...
 {
     _usbContainer = new UsbContainer(&_log);
     ui->setupUi(this);
