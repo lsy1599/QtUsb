@@ -8,11 +8,11 @@ MainWindow::MainWindow(QWidget *parent) :
     _usbContainer = new UsbContainer(&_log);
     ui->setupUi(this);
     QStringList usbLogList = _log.split("\n");
-    for(int i=0;i<usbLogList.size();i++){
-        if(usbLogList.at(i).contains("Error")){
+    for(int i=0; i<usbLogList.size(); i++) {
+        if(usbLogList.at(i).contains("Error")) {
             ui->usbListWidget->addItem(usbLogList.at(i));
             ui->usbListWidget->item(i)->setTextColor(Qt::red);
-        }else{
+        } else {
             ui->usbListWidget->addItem(usbLogList.at(i));
             ui->usbListWidget->item(i)->setTextColor(Qt::green);
         }
@@ -32,11 +32,11 @@ void MainWindow::on_usbReloadPushButton_clicked()
     _usbContainer = new UsbContainer(&_log);
     QStringList usbLogList = _log.split("\n");
     ui->usbListWidget->clear();
-    for(int i=0;i<usbLogList.size();i++){
-        if(usbLogList.at(i).contains("Error")){
+    for(int i=0; i<usbLogList.size(); i++) {
+        if(usbLogList.at(i).contains("Error")) {
             ui->usbListWidget->addItem(usbLogList.at(i));
             ui->usbListWidget->item(i)->setTextColor(Qt::red);
-        }else{
+        } else {
             ui->usbListWidget->addItem(usbLogList.at(i));
             ui->usbListWidget->item(i)->setTextColor(Qt::green);
         }
@@ -47,7 +47,7 @@ void MainWindow::on_pushButton_clicked()
 {
     QStringList usbLogList = _usbContainer->listNonRootDevices();
     ui->usbListWidget->clear();
-    for(int i=0;i<usbLogList.size();i++){
+    for(int i=0; i<usbLogList.size(); i++) {
         ui->usbListWidget->addItem(usbLogList.at(i));
     }
 }

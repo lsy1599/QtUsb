@@ -14,15 +14,17 @@
 
 // TODO change libusb struct
 
-namespace USBParser {
-    QString parseDeviceClass(int code);
-    QString parseUsbError(int error);
+namespace USBParser
+{
+QString parseDeviceClass(int code);
+QString parseUsbError(int error);
 }
 
 // It was struct - but to avoid warnings considering default 0xFF values which are far off
 // Values which could be gained during usage (f.e. max adress - 127) constructor had to be
 // created
-class Endpoint : public libusb_endpoint_descriptor {
+class Endpoint : public libusb_endpoint_descriptor
+{
 private:
     QString extra_;
 public:
@@ -44,7 +46,8 @@ public:
     bool exist() const;
 };
 
-class AlternateSetting {
+class AlternateSetting
+{
 private:
     libusb_interface_descriptor interface_descriptor;
     QVector<Endpoint> _endpoint;
@@ -65,7 +68,8 @@ public:
 
 // TODO return whole information about all interfaces accessible
 
-class Interface{
+class Interface
+{
 private:
     int _numOfAltInterfaces;
     QVector<AlternateSetting> _alternateSetting;
@@ -84,7 +88,7 @@ public:
 // ADD new state use to get all devices and so one
 class UsbDev
 {
-    enum{
+    enum {
         OUT_OF_USB_BUS = 128,
     };
 
@@ -93,7 +97,8 @@ public:
     UsbDev(libusb_device *device, int devNr, QString *errorLog);
     ~UsbDev();
 
-    class State {
+    class State
+    {
     private:
         QVector<char> interfacesNrClaimed;
     public:
@@ -102,7 +107,8 @@ public:
             Opened,
             Claimed,
         };
-        ST pop() {
+        ST pop()
+        {
             if ( state.isEmpty() ) {
                 return None;
             } else {
@@ -111,16 +117,19 @@ public:
                 return tmp;
             }
         }
-        void push(State::ST st) {
+        void push(State::ST st)
+        {
             state.push_back(st);
         }
 
-        void push(char interfaceNr) {
+        void push(char interfaceNr)
+        {
             state.push_back(State::ST::Claimed);
             interfacesNrClaimed.push_back(interfaceNr);
         }
 
-        char popInNr() {
+        char popInNr()
+        {
             char tmp = interfacesNrClaimed.back();
             interfacesNrClaimed.pop_back();
             return tmp;

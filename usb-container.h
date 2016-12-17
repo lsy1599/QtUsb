@@ -4,7 +4,8 @@
 #include <QVector>
 #include <QTextStream>
 
-class UsbContainer {
+class UsbContainer
+{
 private:
     QVector<UsbDev> _usbDevices;
     int _error;

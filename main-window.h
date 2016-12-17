@@ -4,7 +4,8 @@
 #include <QMainWindow>
 #include "usb-container.h"
 
-namespace Ui {
+namespace Ui
+{
 class MainWindow;
 }
 

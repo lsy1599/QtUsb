@@ -9,53 +9,57 @@ UsbContainer::UsbContainer(QString *errorLog) : _error(0), _numOfDev(0), _errorL
         if (_numOfDev < 1) {
             QTextStream(_errorLog) << "Error: No dev found" << endl;
             return;
-        }else{
-            for (uint i=0;i<_numOfDev; i++) {
+        } else {
+            for (uint i=0; i<_numOfDev; i++) {
                 _usbDevices.push_back(UsbDev(_device_list[i],i,errorLog));
             }
         }
     }
 }
 
-UsbContainer::~UsbContainer(){
+UsbContainer::~UsbContainer()
+{
     libusb_exit(_ctx);
 }
 
-int UsbContainer::usbLibInit(){
+int UsbContainer::usbLibInit()
+{
     uint error;
     return error = libusb_init(&_ctx);
 }
 
 
 // Lists all devices which are accesible with no root privileges
-QStringList UsbContainer::listNonRootDevices(){
+QStringList UsbContainer::listNonRootDevices()
+{
     QStringList tmpList;
-    for(int i=0;i<_usbDevices.size();i++)
-    {
-        if(_usbDevices.at(i).isNonSudoDev()){
+    for(int i=0; i<_usbDevices.size(); i++) {
+        if(_usbDevices.at(i).isNonSudoDev()) {
             tmpList.append(_usbDevices.at(i).getProductString());
         }
     }
     return tmpList;
 }
 
-QString UsbContainer::writeToDevice(QString &productString){
+QString UsbContainer::writeToDevice(QString &productString)
+{
     size_t size = _usbDevices.size() , i;
-    for(i = 0; i<size; ++i){
-        if(_usbDevices[i].getProductString() == productString){
+    for(i = 0; i<size; ++i) {
+        if(_usbDevices[i].getProductString() == productString) {
             break;
         }
     }
-    if(i == size){
+    if(i == size) {
         // here shall be some kind of error to be more informative
         // one shall give string not int, or the best error clas
         return "One shall not pass";
-    }else{
+    } else {
         return _usbDevices[i].interrupt_transfer(Endpoint::Direction::Out);
     }
 }
 
-QStringList UsbContainer::getDeviceInfo(int i){
+QStringList UsbContainer::getDeviceInfo(int i)
+{
     QString tmp;
     QTextStream(&tmp) << _usbDevices.size();
     QStringList tmpList;
@@ -65,17 +69,18 @@ QStringList UsbContainer::getDeviceInfo(int i){
     return tmpList;
 }
 
-QStringList UsbContainer::getDeviceInfo(QString &stringi){
+QStringList UsbContainer::getDeviceInfo(QString &stringi)
+{
     QStringList tmp;
     size_t size = _usbDevices.size(), i;
-    for(i=0; i<size ; ++i){
-        if(_usbDevices[i].getProductString() == stringi ){
+    for(i=0; i<size ; ++i) {
+        if(_usbDevices[i].getProductString() == stringi ) {
             break;
         }
     }
-    if(i == size){
+    if(i == size) {
         tmp.append("No such device");
-    }else{
+    } else {
         tmp = _usbDevices[i].devInfo();
     }
     return tmp;

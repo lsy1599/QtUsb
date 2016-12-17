@@ -9,15 +9,18 @@ class BaseInfo
 private:
     QString ss;
 public:
-    BaseInfo( QString text = "" ) {
+    BaseInfo( QString text = "" )
+    {
         ss = text;
     }
     template<typename T>
-    BaseInfo& operator<<(T &el) {
+    BaseInfo& operator<<(T &el)
+    {
         QTextStream(ss) << el;
         return this;
     }
-    QString get() {
+    QString get()
+    {
         return ss;
     }
 
@@ -28,7 +31,8 @@ public slots:
 class Error : public BaseInfo
 {
 public:
-    Error( QString text = ""  ) : BaseInfo(text) {
+    Error( QString text = ""  ) : BaseInfo(text)
+    {
     }
 };
 
