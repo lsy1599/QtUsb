@@ -348,7 +348,7 @@ UsbDev::UsbDev(libusb_device *device,int devNr,QString *errorLog) : _isOpen(fals
     } else {
         error= libusb_open(device,&_device_handle);
         if(error<0) {
-            QTextStream(errorLog) << "Error: Opening USB devicenr: "
+            QTextStream(errorLog) << "Error: Opening USB device nr: "
                                   << devNr
                                   << endl;
         } else {
@@ -550,7 +550,7 @@ void raw_close(libusb_device_handle *handle)
 
 // TODO add data to interrutp_transfer and remove tmp set_me_ablaze
 // this was for tests purposes for led blinking :)
-QString UsbDev::interrupt_transfer( Endpoint::Direction IO, const unsigned int timeout=5000 )
+QString UsbDev::interrupt_transfer( Endpoint::Direction IO, const unsigned int timeout)
 {
     static bool set_me_ablaze = true;
     unsigned char buffer[2] = { 0xff,0xff };
@@ -578,7 +578,7 @@ QString UsbDev::interrupt_transfer( Endpoint::Direction IO, const unsigned int t
 }
 
 // TODO: change 0,0, to some named values, check 2nd value in controll transfer, check if IO is actually ok
-QString UsbDeb::controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout=5000)
+QString UsbDev::controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout )
 {
     libusb_control_transfer(
         this->getHandle(),
@@ -586,7 +586,7 @@ QString UsbDeb::controll_transfer(Endpoint::Direction IO, char* bufer, size_t bu
         IO,
         0,
         0,
-        bufer,
+        (unsigned char*)bufer,
         buf_size,
         timeout
     );

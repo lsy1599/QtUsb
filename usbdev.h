@@ -8,7 +8,7 @@
 #include <QTextStream>
 #include <QVector>
 #include <QList>
-#include <baseinfo.h>
+#include "baseinfo.h"
 #include <QDebug>
 
 
@@ -159,8 +159,8 @@ public:
     QString getManufacturerString() const;
     QStringList devInfo();
     QStringList getConfigData();
-    QString interrupt_transfer(Endpoint::Direction IO);
-    QString controll_transfer(Endpoint::Direction IO);
+    QString interrupt_transfer(Endpoint::Direction IO, const unsigned int timeout=5000 );
+    QString controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout=5000 );
 //    QString pollRead();
     void deClaim() throw(Error);
     bool freeStates();
