@@ -592,6 +592,11 @@ QString UsbDev::controll_transfer(Endpoint::Direction IO, char* bufer, size_t bu
     );
 }
 
+QString UsbDev::control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout) {
+    qDebug() << "WE DO NOT WANT THIS NOW :)";
+    return "NOT IMPLEMENTED";
+}
+
 int UsbDev::close()
 {
     if(_isOpen) {

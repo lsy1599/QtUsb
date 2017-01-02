@@ -1,5 +1,9 @@
 #include "usb-container.h"
 
+namespace {
+    static UsbDev deft;
+}
+
 UsbContainer::UsbContainer(QString *errorLog) : _error(0), _numOfDev(0), _errorLog(errorLog)
 {
     _error = usbLibInit();
@@ -41,23 +45,6 @@ QStringList UsbContainer::listNonRootDevices()
     return tmpList;
 }
 
-QString UsbContainer::writeToDevice(QString &productString)
-{
-    size_t size = _usbDevices.size() , i;
-    for(i = 0; i<size; ++i) {
-        if(_usbDevices[i].getProductString() == productString) {
-            break;
-        }
-    }
-    if(i == size) {
-        // here shall be some kind of error to be more informative
-        // one shall give string not int, or the best error clas
-        return "One shall not pass";
-    } else {
-        return _usbDevices[i].interrupt_transfer(Endpoint::Direction::Out);
-    }
-}
-
 QStringList UsbContainer::getDeviceInfo(int i)
 {
     QString tmp;
@@ -86,3 +73,24 @@ QStringList UsbContainer::getDeviceInfo(QString &stringi)
     return tmp;
 }
 
+UsbDev *UsbContainer::getDevice( const QString &devInfo ) {
+    auto iter = _usbDevices.begin();
+    for ( int i =0; i < _usbDevices.size(); ++i, iter +=1 ) {
+        if ( iter->getProductString() == devInfo ) {
+            return iter; 
+        }
+    }
+    return &deft;
+}
+
+UsbDev *UsbContainer::getDevice( const int num ) {
+    int nonsudodevnr =0;
+    auto iter = _usbDevices.begin();
+    for ( int i =0; i < _usbDevices.size(); ++i, ++iter ) {
+        if ( iter->isNonSudoDev() ) {
+            if( num == nonsudodevnr ) return iter;
+            ++nonsudodevnr;
+        }
+    }
+    return &deft;
+}

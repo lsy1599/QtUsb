@@ -18,10 +18,10 @@ public:
     UsbContainer(QString *errorLog);
     ~UsbContainer();
     QStringList listNonRootDevices();
-    int writeToDevice(uint i, QString *ohShiet=0);
-    QString writeToDevice(QString &productString);
     QStringList getDeviceInfo(int i);
     QStringList getDeviceInfo(QString &stringi);
+    UsbDev *getDevice( const QString &devInfo );
+    UsbDev *getDevice( const int num );
 };
 
 #endif // USBCONTAINER_H

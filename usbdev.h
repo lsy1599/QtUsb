@@ -161,6 +161,7 @@ public:
     QStringList getConfigData();
     QString interrupt_transfer(Endpoint::Direction IO, const unsigned int timeout=5000 );
     QString controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout=5000 );
+    QString control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout=500);
 //    QString pollRead();
     void deClaim() throw(Error);
     bool freeStates();
