@@ -8,9 +8,9 @@ class UsbHid : public UsbDev {
 private:
 
 public:
-    UsbHid : public UsbDev();
-    virtual ~UsbHid : public UsbDev();
-    QString control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout);
+    UsbHid();
+    virtual ~UsbHid();
+    QString control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout=500);
 };
 
 #endif /* USB_HID_H */
