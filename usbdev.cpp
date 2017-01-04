@@ -577,9 +577,29 @@ QString UsbDev::interrupt_transfer( Endpoint::Direction IO, const unsigned int t
     return "";
 }
 
+QString UsbDev::control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout) {
+    qDebug() << "IN DEVELOPMENT";
+    qDebug() << QString((char*)data);
+    this->open();
+    libusb_control_transfer(
+            getHandle(),
+            LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT,
+            request ,
+            0,
+            0,
+            data, 
+            1,
+            timeout );
+    this->close();
+    return QString((char*)data);
+}
+
+
 // TODO: change 0,0, to some named values, check 2nd value in controll transfer, check if IO is actually ok
 QString UsbDev::controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout )
 {
+    qDebug() << "IN DEVELOPMENT";
+    this->open();
     libusb_control_transfer(
         this->getHandle(),
         LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT,
@@ -590,11 +610,7 @@ QString UsbDev::controll_transfer(Endpoint::Direction IO, char* bufer, size_t bu
         buf_size,
         timeout
     );
-}
-
-QString UsbDev::control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout) {
-    qDebug() << "WE DO NOT WANT THIS NOW :)";
-    return "NOT IMPLEMENTED";
+    this->close();
 }
 
 int UsbDev::close()
