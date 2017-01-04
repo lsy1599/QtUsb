@@ -578,8 +578,6 @@ QString UsbDev::interrupt_transfer( Endpoint::Direction IO, const unsigned int t
 }
 
 QString UsbDev::control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout) {
-    qDebug() << "IN DEVELOPMENT";
-    qDebug() << QString((char*)data);
     this->open();
     libusb_control_transfer(
             getHandle(),
@@ -598,7 +596,6 @@ QString UsbDev::control_transfer(uchar *data, size_t size, unsigned int request,
 // TODO: change 0,0, to some named values, check 2nd value in controll transfer, check if IO is actually ok
 QString UsbDev::controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout )
 {
-    qDebug() << "IN DEVELOPMENT";
     this->open();
     libusb_control_transfer(
         this->getHandle(),
