@@ -29,8 +29,8 @@ private:
     QString extra_;
 public:
     enum Direction {
-        In  = 0,
-        Out = 1,
+        In  = 0x80,
+        Out = 0,
     };
     Endpoint();
     Endpoint(const libusb_endpoint_descriptor *endpoint);
@@ -162,7 +162,7 @@ public:
     // TODO maybe I shall add template to fit it into "SIMPLE" mode when I do not need to think
     // about reconnection of the device, instead of doing it by default
     QString interrupt_transfer(Endpoint::Direction IO, const unsigned int timeout=5000 );
-    QString controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout=5000 );
+    QString control_transfer(Endpoint::Direction IO, unsigned int request, uchar* bufer, size_t buf_size, const unsigned int timeout=5000 );
     QString control_transfer(uchar *data, size_t size, unsigned int request, size_t timeout=500);
 //    QString pollRead();
     void deClaim() throw(Error);

@@ -581,12 +581,12 @@ QString UsbDev::control_transfer(uchar *data, size_t size, unsigned int request,
     this->open();
     libusb_control_transfer(
             getHandle(),
-            LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT,
+            LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN,
             request ,
             0,
             0,
             data, 
-            1,
+            size,
             timeout );
     this->close();
     return QString((char*)data);
@@ -594,20 +594,21 @@ QString UsbDev::control_transfer(uchar *data, size_t size, unsigned int request,
 
 
 // TODO: change 0,0, to some named values, check 2nd value in controll transfer, check if IO is actually ok
-QString UsbDev::controll_transfer(Endpoint::Direction IO, char* bufer, size_t buf_size, const unsigned int timeout )
+QString UsbDev::control_transfer(Endpoint::Direction IO, unsigned int request, uchar* bufer, size_t buf_size, const unsigned int timeout )
 {
     this->open();
     libusb_control_transfer(
         this->getHandle(),
-        LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT,
-        IO,
+        LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | IO,
+        request,
         0,
         0,
-        (unsigned char*)bufer,
+        bufer,
         buf_size,
         timeout
     );
-    this->close();
+    // this->close();
+    return "done";
 }
 
 int UsbDev::close()
